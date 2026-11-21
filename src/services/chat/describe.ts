@@ -51,7 +51,7 @@ export const describeReply = (reply: AssistantMessage): Notice | null => {
   }
   if (reply.stopReason === 'refusal') {
     // 导入的拒绝回复优先展示归档中的模板，普通正文仍不可展示。
-    return { text: template || translate('replyRefused'), presentation: 'response' }
+    return { text: template || translate('replySensitive'), presentation: 'response' }
   }
   if (template) {
     return { text: template, presentation: 'response' }

@@ -12,6 +12,8 @@ import type {
   Message,
   ReplyBlock,
   ReplyStatus,
+  TextPart,
+  ThinkingPart,
   UserMessage,
 } from './types.js'
 
@@ -136,28 +138,50 @@ export const applyEvent = (
   }
 }
 
+/** 结束思考块：有开始时间且尚未结束时补上结束时间。 */
+const settleThinking = (block: ThinkingPart, now: number): ThinkingPart =>
+  block.startedAt !== undefined && block.endedAt === undefined ? { ...block, endedAt: now } : block
+
 /**
  * 回复结束：未结束的思考块以当前时间收尾。
- * 安全拒绝（stop_reason: refusal）时已下发的思考与正文不能撤回，按协议要求由客户端丢弃，只保留工具块。
+ * 安全拒绝（stop_reason: refusal）时，已下发的思考和正文移入 redacted 供本地展开查看；
+ * blocks 只保留工具块和服务端模板，保持可展示、可导出、可进上下文的语义。
  */
 export const settleReply = (
   reply: AssistantMessage,
   status: Extract<ReplyStatus, 'done' | 'stopped' | 'error'>,
   now: number,
   error?: AssistantMessage['error']
-): AssistantMessage => ({
-  ...reply,
-  status,
-  error,
-  blocks: reply.blocks.flatMap((block): ReplyBlock[] => {
-    if (reply.stopReason === 'refusal' && (block.type === 'thinking' || block.type === 'text')) {
-      return []
+): AssistantMessage => {
+  if (reply.stopReason !== 'refusal') {
+    return {
+      ...reply,
+      status,
+      error,
+      blocks: reply.blocks.map((block) =>
+        block.type === 'thinking' ? settleThinking(block, now) : block
+      ),
     }
-    return block.type === 'thinking' && block.startedAt !== undefined && block.endedAt === undefined
-      ? [{ ...block, endedAt: now }]
-      : [block]
-  }),
-})
+  }
+  const blocks: ReplyBlock[] = []
+  const redacted: (ThinkingPart | TextPart)[] = []
+  for (const block of reply.blocks) {
+    if (block.type === 'thinking') {
+      redacted.push(settleThinking(block, now))
+    } else if (block.type === 'text' && !block.isTemplate) {
+      redacted.push(block)
+    } else {
+      blocks.push(block)
+    }
+  }
+  return {
+    ...reply,
+    status,
+    error,
+    blocks,
+    ...(redacted.length > 0 ? { redacted } : {}),
+  }
+}
 
 /** 回复里所有文本块拼起来，用于复制与判断是否有回答 */
 export const getReplyText = (reply: AssistantMessage) =>

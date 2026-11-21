@@ -90,6 +90,8 @@ export type AssistantMessage = MessageBranch & {
   status: ReplyStatus
   /** 可识别的内容块按接收顺序排列；续写产生的块追加在已有块之后 */
   blocks: ReplyBlock[]
+  /** 安全拒绝时按协议丢弃的思考与正文；仅本地保留供展开查看，不参与上下文、导出和复制。 */
+  redacted?: (ThinkingPart | TextPart)[]
   stopReason?: StopReason
   stopDetails?: StopDetails
   /** 最近一次请求的用量，续写后更新 */

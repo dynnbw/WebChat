@@ -34,10 +34,11 @@ import { Select } from '../base/Select.js'
 import { showToast } from '../base/toastState.js'
 import { ApiKeyConfirm, ApiKeyField, useApiKeyEditor } from './ApiKeyField.js'
 import { closeSettings, useSettingsDialog, type SettingsSection } from './settingsDialogState.js'
+import { SystemPromptSetting } from './SystemPromptSetting.js'
 import styles from './Settings.module.css'
 
 /**
- * 设置弹窗：分「通用设置」（主题、语言、朗读音色、位置）与「数据管理」（API Key、导入、导出、删除）。
+ * 设置弹窗：分「通用设置」（主题、语言、系统提示词、朗读音色、位置）与「数据管理」（API Key、导入、导出、删除）。
  * 桌面端为居中弹窗、左侧导航；移动端为底部弹层、导航横排在内容上方
  */
 export const SettingsDialog = () => {
@@ -98,6 +99,7 @@ const SettingsContent = () => {
             <>
               <ThemeSetting />
               <LocaleSetting />
+              <SystemPromptSetting />
               <TtsVoiceSetting />
               <LocationSetting />
             </>

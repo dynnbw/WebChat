@@ -263,6 +263,21 @@ export const IconStopFill16 = () => (
   </svg>
 )
 
+export const IconModelOutline14 = () => (
+  <svg width={14} height={14} viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect
+      x="2.75"
+      y="2.75"
+      width="8.5"
+      height="8.5"
+      rx="2.25"
+      stroke="currentColor"
+      strokeWidth="1.25"
+    />
+    <path d="M5.5 5.5h3v3h-3z" stroke="currentColor" strokeWidth="1.25" />
+  </svg>
+)
+
 export const IconThinkOutline14 = () => (
   <svg width={14} height={14} viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path

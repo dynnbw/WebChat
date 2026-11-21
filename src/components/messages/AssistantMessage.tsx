@@ -16,6 +16,7 @@ import { toggleSearchPanel, useSearchPanel } from '../search/searchPanelState.js
 import { ReadAloudButton } from './ReadAloudButton.js'
 import { CopyButton } from './CopyButton.js'
 import { ReplyArea } from './ReplyArea.js'
+import { SensitiveReply } from './SensitiveReply.js'
 import { useReplyView } from './useReplyView.js'
 import {
   BranchSwitcher,
@@ -47,7 +48,7 @@ export const AssistantMessage = memo(function AssistantMessage({
   const view = useReplyView(message, streaming)
   const panelEntry = useSearchPanel((state) => state.entry)
   const notice = streaming ? null : describeReply(message)
-  // 安全拒绝：已下发的思考与正文按协议丢弃，只显示模板答复。
+  // 安全拒绝：思考和正文已移入 redacted，只显示敏感提示，展开后可阅读原文。
   const refused = message.stopReason === 'refusal'
   const answer = refused ? null : view.answer
   const responseText = [answer?.text, notice?.presentation === 'response' ? notice.text : null]
@@ -83,7 +84,9 @@ export const AssistantMessage = memo(function AssistantMessage({
           ))}
         </div>
       ) : null}
-      {notice?.presentation === 'response' ? (
+      {refused ? (
+        <SensitiveReply message={message} />
+      ) : notice?.presentation === 'response' ? (
         <Markdown
           className="ds-assistant-message-main-content"
           content={notice.text}

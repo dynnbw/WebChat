@@ -1,19 +1,28 @@
 import { create } from 'zustand'
+import type { ChatModel } from './api/types.js'
 import type { TtsVoice } from './api/speech.js'
 import { normalizeLocation, type UserLocation } from './location.js'
+import { DEFAULT_MODEL } from './models.js'
 
 export type Locale = 'zh-CN' | 'en-US'
 
 /** 主题偏好；默认跟随系统 */
 export type ThemePreference = 'light' | 'dark' | 'system'
 
-/** 本机设置，存 localStorage：API Key、语言、主题、位置、朗读音色、深度思考与智能搜索开关、侧边栏收起状态 */
+/** 系统提示词为空或未保存时使用的默认身份说明 */
+export const DEFAULT_SYSTEM_PROMPT = '该助手为DeepSeek，由深度求索公司创造。'
+
+/** 本机设置，存 localStorage：API Key、语言、主题、位置、朗读音色、系统提示词、模型、深度思考与智能搜索开关、侧边栏收起状态 */
 type Settings = {
   apiKey: string | null
   locale: Locale
   themePreference: ThemePreference
   location: UserLocation | null
   ttsVoice: TtsVoice
+  /** 每次生成请求作为 system 发送，完全替换默认身份说明 */
+  systemPrompt: string
+  /** 下一条消息使用的模型；已有回复按自身快照续写 */
+  model: ChatModel
   thinking: boolean
   search: boolean
   siderCollapsed: boolean
@@ -25,6 +34,8 @@ const KEYS = {
   location: 'chat-demo:location',
   themePreference: 'chat-demo:theme-preference',
   ttsVoice: 'chat-demo:tts-voice',
+  systemPrompt: 'chat-demo:system-prompt',
+  model: 'chat-demo:model',
   thinking: 'chat-demo:thinking',
   search: 'chat-demo:search',
   siderCollapsed: 'chat-demo:sider-collapsed',
@@ -87,12 +98,24 @@ const initialThemePreference = (): ThemePreference => {
 /** 未保存过时使用服务端默认音色 stella（海星） */
 const initialTtsVoice = (): TtsVoice => (read(KEYS.ttsVoice) === 'tide' ? 'tide' : 'stella')
 
+/** 保存值非空才使用，否则回退默认身份说明 */
+const initialSystemPrompt = (): string => {
+  const saved = read(KEYS.systemPrompt)
+  return saved !== null && saved.trim() !== '' ? saved : DEFAULT_SYSTEM_PROMPT
+}
+
+/** 只接受当前已知模型，其余情况使用默认模型 */
+const initialModel = (): ChatModel =>
+  read(KEYS.model) === 'deepseek-v4-pro' ? 'deepseek-v4-pro' : DEFAULT_MODEL
+
 export const useSettings = create<Settings>(() => ({
   apiKey: read(KEYS.apiKey),
   locale: initialLocale(),
   location: initialLocation(),
   themePreference: initialThemePreference(),
   ttsVoice: initialTtsVoice(),
+  systemPrompt: initialSystemPrompt(),
+  model: initialModel(),
   thinking: read(KEYS.thinking) === 'true',
   search: read(KEYS.search) === 'true',
   siderCollapsed: read(KEYS.siderCollapsed) === 'true',
@@ -117,6 +140,17 @@ export const setThemePreference = (themePreference: ThemePreference) => {
 export const setTtsVoice = (ttsVoice: TtsVoice) => {
   write(KEYS.ttsVoice, ttsVoice)
   useSettings.setState({ ttsVoice })
+}
+
+export const setSystemPrompt = (systemPrompt: string) => {
+  const value = systemPrompt.trim() === '' ? DEFAULT_SYSTEM_PROMPT : systemPrompt
+  write(KEYS.systemPrompt, value)
+  useSettings.setState({ systemPrompt: value })
+}
+
+export const setModel = (model: ChatModel) => {
+  write(KEYS.model, model)
+  useSettings.setState({ model })
 }
 
 export const setApiKey = (apiKey: string | null) => {
