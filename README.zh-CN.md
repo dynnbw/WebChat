@@ -57,6 +57,8 @@ API Key 和设置保存在浏览器 localStorage，会话及附件原件保存�
 
 [rspack.config.ts](rspack.config.ts) 默认连接 `https://api.deepseek.com`。`createConfig({ apiOrigin, devServer })` 支持自定义 API 地址和开发服务器代理。
 
+开发服务器需要通过自定义域名访问时，把域名写入本地 `.dev-hosts` 文件（每行一个或用逗号分隔），或设置 `DEV_ALLOWED_HOSTS`。该文件只保留在本地，不会进入仓库。
+
 聊天默认使用 `deepseek-flash`，通过 Anthropic 兼容的 Messages / Files API 通信；语音使用 ASR / TTS 接口。请求使用搜索、链接阅读、标题和 `latest_reminder` 等扩展，接入服务需支持相应能力。附件实际支持的格式以服务端校验为准。
 
 ```text

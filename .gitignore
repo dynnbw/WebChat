@@ -3,6 +3,7 @@ dist/
 build/
 .pnpm-store/
 .cache/
+.dev-hosts
 *.log
 .DS_Store
 .env
