@@ -27,10 +27,12 @@ export const SessionItem = memo(function SessionItem({
   session,
   active,
   onDelete,
+  onConvert,
 }: {
   session: SessionSummary
   active: boolean
   onDelete: () => void
+  onConvert: () => void
 }) {
   const t = useTranslate()
   const [editing, setEditing] = useState(false)
@@ -69,6 +71,14 @@ export const SessionItem = memo(function SessionItem({
       label: session.cloudSync ? t('cloudSyncDisable') : t('cloudSyncEnable'),
       icon: <IconCloudOutline16 />,
       onSelect: toggleCloudSync,
+    })
+  }
+  if (ONLINE_MODE && session.cloudKind === 'backup') {
+    menuOptions.push({
+      key: 'convert',
+      label: t('cloudBackupConvert'),
+      icon: <IconCloudOutline16 />,
+      onSelect: onConvert,
     })
   }
   menuOptions.push({

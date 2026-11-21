@@ -10,7 +10,12 @@ import {
 import { setSiderCollapsed } from '../../services/settings.js'
 import { groupSessions } from '../../services/chat/sessionGroups.js'
 import { ONLINE_MODE } from '../../services/online/mode.js'
-import { newChat, removeSession, useChatStore } from '../../services/chat/store.js'
+import {
+  convertBackupToOnline,
+  newChat,
+  removeSession,
+  useChatStore,
+} from '../../services/chat/store.js'
 import type { SessionSummary } from '../../services/chat/types.js'
 import { Button } from '../base/Button.js'
 import { IconButton } from '../base/IconButton.js'
@@ -47,6 +52,8 @@ export const Sider = ({ mobile = false }: { mobile?: boolean }) => {
   }, [sessions, now, t])
   const [deleting, setDeleting] = useState<SessionSummary | null>(null)
   const [deletePending, setDeletePending] = useState(false)
+  const [converting, setConverting] = useState<SessionSummary | null>(null)
+  const [convertPending, setConvertPending] = useState(false)
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>
@@ -120,6 +127,7 @@ export const Sider = ({ mobile = false }: { mobile?: boolean }) => {
                   session={session}
                   active={session.id === activeId}
                   onDelete={() => setDeleting(session)}
+                  onConvert={() => setConverting(session)}
                 />
               ))}
             </div>
@@ -182,6 +190,47 @@ export const Sider = ({ mobile = false }: { mobile?: boolean }) => {
           }
         >
           {t('deleteSessionWithFilesDescription')}
+        </Modal>
+      ) : null}
+      {converting ? (
+        <Modal
+          title={t('cloudBackupConvertTitle')}
+          onClose={() => {
+            if (!convertPending) {
+              setConverting(null)
+            }
+          }}
+          footer={
+            <>
+              <Button
+                variant="outlined"
+                disabled={convertPending}
+                onClick={() => setConverting(null)}
+              >
+                {t('cancel')}
+              </Button>
+              <Button
+                disabled={convertPending}
+                onClick={async () => {
+                  setConvertPending(true)
+                  try {
+                    if (await convertBackupToOnline(converting.id)) {
+                      setConverting(null)
+                      showToast({ key: 'cloudBackupConverted' })
+                    } else {
+                      showToast({ key: 'cloudBackupConvertFailed', type: 'error' })
+                    }
+                  } finally {
+                    setConvertPending(false)
+                  }
+                }}
+              >
+                {t('cloudBackupConvertConfirm')}
+              </Button>
+            </>
+          }
+        >
+          {t('cloudBackupConvertDescription')}
         </Modal>
       ) : null}
     </div>

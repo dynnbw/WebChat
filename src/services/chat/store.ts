@@ -18,6 +18,7 @@ import {
   scheduleCloudSync,
   syncSessionNow,
 } from '../cloud/sync.js'
+import { cloudConvertSession } from '../cloud/client.js'
 import { appendBranch, getVisibleMessages, normalizeSession, selectVersion } from './branches.js'
 import * as db from './db.js'
 import {
@@ -123,6 +124,7 @@ const unsavedSessions = new Set<string>()
 /** 保存失败时保留原件，重试成功后才释放。 */
 const pendingFiles = new Map<string, db.StoredFile[]>()
 const deletingSessions = new Set<string>()
+const convertingSessions = new Set<string>()
 const deletionTasks = new Set<Promise<boolean>>()
 const streamFlushes = new Map<string, () => void>()
 let accessSequence = 0
@@ -501,6 +503,71 @@ export const setSessionCloudSync = async (id: string, cloudSync: boolean): Promi
     cancelCloudSync(id)
   }
   return true
+}
+
+/**
+ * 在线版：把只读的设备备份转成可继续聊天的在线对话。
+ * 服务端先写入新会话再删除备份；成功后用新 id 替换本地列表与缓存。
+ */
+export const convertBackupToOnline = async (id: string): Promise<string | null> => {
+  if (
+    !ONLINE_MODE ||
+    get().importingHistory ||
+    deletingSessions.has(id) ||
+    convertingSessions.has(id)
+  ) {
+    return null
+  }
+  const summary = get().sessions.find((session) => session.id === id)
+  if (!summary || summary.cloudKind !== 'backup') {
+    return null
+  }
+  convertingSessions.add(id)
+  try {
+    const detail = await cloudConvertSession('', null, id)
+    // 同一个 origin 的离线副本可能还保留着同步开关，必须先解除，否则回到离线模式
+    // 修改一次就会按原 id 重新上传设备备份。
+    try {
+      await db.clearLocalCloudSync(id)
+    } catch (error) {
+      db.reportStorageError('clear local cloud sync')(error)
+    }
+    const session = normalizeSession({ ...detail.session, cloudKind: 'online' })
+    const newId = session.id
+    sessionLoads.delete(id)
+    sessionAccess.delete(id)
+    unsavedSessions.delete(id)
+    pendingFiles.delete(id)
+    clearDraft(id)
+    touchSession(newId)
+    set((state) => {
+      const wasActive = state.activeId === id
+      const sessionCache = Object.fromEntries(
+        Object.entries(state.sessionCache).filter(([key]) => key !== id)
+      )
+      return {
+        sessions: sortSessions([
+          ...state.sessions.filter((item) => item.id !== id),
+          toSessionSummary(session),
+        ]),
+        sessionCache: { ...sessionCache, [newId]: session },
+        sessionLoadErrors: Object.fromEntries(
+          Object.entries(state.sessionLoadErrors).filter(([key]) => key !== id)
+        ),
+        sessionSaveErrors: Object.fromEntries(
+          Object.entries(state.sessionSaveErrors).filter(([key]) => key !== id)
+        ),
+        activeId: wasActive ? newId : state.activeId,
+      }
+    })
+    trimSessionCache()
+    return newId
+  } catch (error) {
+    db.reportStorageError('convert device backup')(error)
+    return null
+  } finally {
+    convertingSessions.delete(id)
+  }
 }
 
 export const renameSession = (id: string, title: string) => {

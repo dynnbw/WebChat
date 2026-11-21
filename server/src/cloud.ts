@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { Hono } from 'hono'
@@ -126,6 +127,59 @@ cloudRoutes.get('/sessions/:id', (c) => {
     return c.json({ error: 'invalid_session' }, 500)
   }
   return c.json({ session, kind: row.kind, updatedAt: row.updated_at })
+})
+
+/**
+ * 把设备备份原子地复制成一条新的在线对话，再删除原备份。
+ * 图片仍被新会话引用，不需要回收；设备本地记录不受影响。
+ */
+cloudRoutes.post('/sessions/:id/convert', (c) => {
+  const id = c.req.param('id')
+  if (!idPattern.test(id)) {
+    return c.json({ error: 'invalid_id' }, 400)
+  }
+  const row = db.prepare('SELECT * FROM cloud_sessions WHERE id = ?').get(id) as
+    | SessionRow
+    | undefined
+  if (!row) {
+    return c.json({ error: 'not_found' }, 404)
+  }
+  if (row.kind !== 'backup') {
+    return c.json({ error: 'not_backup' }, 409)
+  }
+  let stored: unknown
+  try {
+    stored = JSON.parse(row.data_json)
+  } catch {
+    return c.json({ error: 'invalid_session' }, 500)
+  }
+  if (!isRecord(stored)) {
+    return c.json({ error: 'invalid_session' }, 500)
+  }
+  const newId = randomUUID()
+  const updatedAt = Date.now()
+  const session: Record<string, unknown> = {
+    ...stored,
+    id: newId,
+    updatedAt,
+    cloudKind: 'online',
+  }
+  delete session.cloudSync
+  const title = typeof session.title === 'string' ? session.title : row.title
+  const createdAt = typeof session.createdAt === 'number' ? session.createdAt : row.created_at
+  db.exec('BEGIN IMMEDIATE')
+  try {
+    db.prepare(
+      `INSERT INTO cloud_sessions (id, kind, title, created_at, updated_at, data_json)
+       VALUES (?, 'online', ?, ?, ?, ?)`
+    ).run(newId, title, createdAt, updatedAt, JSON.stringify(session))
+    db.prepare('DELETE FROM cloud_sessions WHERE id = ?').run(id)
+    db.exec('COMMIT')
+  } catch (error) {
+    db.exec('ROLLBACK')
+    throw error
+  }
+  return c.json({ session, kind: 'online', updatedAt })
 })
 
 cloudRoutes.put(

@@ -125,6 +125,21 @@ export const cloudDeleteSession = async (
   })
 }
 
+/** 服务端原子地把设备备份转换成新的在线对话，并删除原备份。 */
+export const cloudConvertSession = async (
+  origin: string,
+  token: string | null,
+  id: string
+): Promise<CloudSessionDetail> => {
+  const response = await request(
+    origin,
+    token,
+    `/api/cloud/sessions/${encodeURIComponent(id)}/convert`,
+    { method: 'POST' }
+  )
+  return (await response.json()) as CloudSessionDetail
+}
+
 export const cloudUploadImage = async (
   origin: string,
   token: string | null,

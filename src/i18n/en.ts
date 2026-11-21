@@ -119,6 +119,13 @@ export const en = {
   cloudSyncedTooltip: 'Synced to cloud',
   cloudBackupReadOnly: 'Synced from a device. This backup is read-only.',
   cloudBackupLabel: 'Device backup',
+  cloudBackupConvert: 'Convert to online chat',
+  cloudBackupConvertTitle: 'Convert to online chat?',
+  cloudBackupConvertDescription:
+    'This creates an online chat you can continue and deletes the original device backup from the cloud. The offline copy on this device stops syncing automatically.',
+  cloudBackupConvertConfirm: 'Convert',
+  cloudBackupConvertFailed: 'Conversion failed. Please try again later.',
+  cloudBackupConverted: 'Converted to online chat',
   onlineConversationsLabel: 'Online chats',
   onlineAccount: 'Account',
   onlineLogout: 'Sign out',

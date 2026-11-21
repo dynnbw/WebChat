@@ -112,6 +112,13 @@ export const zh = {
   cloudSyncedTooltip: '已同步到云端',
   cloudBackupReadOnly: '来自设备同步的备份，只读',
   cloudBackupLabel: '设备备份',
+  cloudBackupConvert: '转为在线聊天',
+  cloudBackupConvertTitle: '转为在线聊天？',
+  cloudBackupConvertDescription:
+    '转换后会创建一个可继续聊天的在线对话，并删除云端的原设备备份。本机的离线副本会停止自动同步。',
+  cloudBackupConvertConfirm: '转换',
+  cloudBackupConvertFailed: '转换失败，请稍后重试',
+  cloudBackupConverted: '已转为在线聊天',
   onlineConversationsLabel: '在线对话',
   onlineAccount: '账户',
   onlineLogout: '退出登录',
