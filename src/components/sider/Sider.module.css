@@ -34,6 +34,13 @@
   color: var(--dsw-alias-brand-primary);
 }
 
+.topActions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+}
+
 .newChat {
   position: relative;
   display: flex;
@@ -179,6 +186,25 @@
   align-items: center;
   gap: 16px;
   margin: 12px 0 0 16px;
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  transform-origin: top left;
+  transition:
+    opacity var(--ds-motion-fast) var(--ds-ease-out),
+    transform var(--ds-motion-fast) var(--ds-ease-out),
+    visibility 0s;
+}
+
+.collapsedHidden {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px) scale(0.96);
+  pointer-events: none;
+  transition:
+    opacity var(--ds-motion-fast) var(--ds-ease-in),
+    transform var(--ds-motion-fast) var(--ds-ease-in),
+    visibility 0s var(--ds-motion-fast);
 }
 
 .collapsedGroup {
@@ -200,12 +226,59 @@
   bottom: 0;
   left: 0;
   z-index: 800;
+  visibility: hidden;
+  transform: translateX(-100%);
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.18);
+  pointer-events: none;
+  transition:
+    transform var(--ds-motion-drawer-close) var(--ds-ease-in),
+    visibility 0s var(--ds-motion-drawer-close);
+}
+
+.drawerOpen {
+  visibility: visible;
+  transform: translateX(0);
+  pointer-events: auto;
+  transition:
+    transform var(--ds-motion-drawer) var(--ds-ease-out),
+    visibility 0s;
 }
 
 .drawerMask {
   position: absolute;
   inset: 0;
   z-index: 799;
+  background-color: rgba(0, 0, 0, 0.32);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity var(--ds-motion-drawer-close) var(--ds-ease-in),
+    visibility 0s var(--ds-motion-drawer-close);
+
+  [data-ds-dark-theme] & {
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+}
+
+.drawerMaskOpen {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    opacity var(--ds-motion-drawer) var(--ds-ease-out),
+    visibility 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collapsed,
+  .collapsedHidden,
+  .drawer,
+  .drawerOpen,
+  .drawerMask,
+  .drawerMaskOpen {
+    transition: none;
+  }
 }
 
 .mobile {

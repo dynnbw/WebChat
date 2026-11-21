@@ -16,8 +16,10 @@ import { IconButton } from '../base/IconButton.js'
 import { Modal } from '../base/Modal.js'
 import { showToast } from '../base/toastState.js'
 import { openSettings } from '../settings/settingsDialogState.js'
+import { AutoReadButton } from '../speech/AutoReadButton.js'
 import { closeStats, openStats } from '../stats/statsViewState.js'
 import { closeMobileSider, useMobileSider } from './mobileSiderState.js'
+import { requestSidebarFocus } from './sidebarFocus.js'
 import { SessionItem } from './SessionItem.js'
 import styles from './Sider.module.css'
 
@@ -59,13 +61,24 @@ export const Sider = ({ mobile = false }: { mobile?: boolean }) => {
     <div className={clsx(styles.sider, mobile && styles.mobile)}>
       <div className={styles.top}>
         <div className={styles.appName}>{t('appName')}</div>
-        <IconButton
-          size="m"
-          icon={<IconPanelLeftOutline16 />}
-          tooltip={t('collapseSiderbarButton')}
-          tooltipPlacement="bottom"
-          onClick={() => (mobile ? closeMobileSider() : setSiderCollapsed(true))}
-        />
+        <div className={styles.topActions}>
+          {mobile ? null : <AutoReadButton />}
+          <IconButton
+            id="sider-collapse-button"
+            size="m"
+            icon={<IconPanelLeftOutline16 />}
+            tooltip={t('collapseSiderbarButton')}
+            tooltipPlacement="bottom"
+            onClick={() => {
+              if (mobile) {
+                closeMobileSider()
+                return
+              }
+              requestSidebarFocus('expand')
+              setSiderCollapsed(true)
+            }}
+          />
+        </div>
       </div>
       <button
         type="button"
@@ -163,13 +176,14 @@ export const Sider = ({ mobile = false }: { mobile?: boolean }) => {
 /** 移动端抽屉：浮在页面上方，点空白区域关闭。 */
 export const MobileSider = () => {
   const open = useMobileSider((state) => state.open)
-  if (!open) {
-    return null
-  }
   return (
     <>
-      <div className={styles.drawerMask} onClick={closeMobileSider} />
-      <div className={styles.drawer}>
+      <div
+        className={clsx(styles.drawerMask, open && styles.drawerMaskOpen)}
+        onClick={closeMobileSider}
+        aria-hidden={!open}
+      />
+      <div className={clsx(styles.drawer, open && styles.drawerOpen)} aria-hidden={!open}>
         <Sider mobile />
       </div>
     </>

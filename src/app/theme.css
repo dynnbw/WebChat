@@ -15,6 +15,14 @@ body {
   --ds-font-size-m: 14px;
 
   --ds-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ds-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ds-ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  --ds-motion-fast: 0.16s;
+  --ds-motion-sidebar: 0.22s;
+  --ds-motion-sidebar-close: 0.18s;
+  --ds-motion-drawer: 0.26s;
+  --ds-motion-drawer-close: 0.2s;
 
   --ds-font-family-code:
     Menlo, Monaco, Consolas, 'Cascadia Mono', 'Ubuntu Mono', 'DejaVu Sans Mono', 'Liberation Mono',

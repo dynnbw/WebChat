@@ -1,0 +1,8 @@
+.active {
+  background-color: var(--dsw-alias-button-ghost-active-fill);
+  color: var(--dsw-alias-brand-text);
+}
+
+.active:hover {
+  background-color: var(--dsw-alias-button-ghost-active-hover);
+}

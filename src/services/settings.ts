@@ -6,19 +6,26 @@ import { DEFAULT_MODEL } from './models.js'
 
 export type Locale = 'zh-CN' | 'en-US'
 
+/** 自动朗读时机；关闭时保留上次选择 */
+export type AutoReadMode = 'done' | 'stream'
+
 /** 主题偏好；默认跟随系统 */
 export type ThemePreference = 'light' | 'dark' | 'system'
 
 /** 系统提示词为空或未保存时使用的默认身份说明 */
 export const DEFAULT_SYSTEM_PROMPT = '该助手为DeepSeek，由深度求索公司创造。'
 
-/** 本机设置，存 localStorage：API Key、语言、主题、位置、朗读音色、系统提示词、模型、深度思考与智能搜索开关、侧边栏收起状态 */
+/** 本机设置，存 localStorage：API Key、语言、主题、位置、朗读音色、自动朗读、系统提示词、模型、深度思考与智能搜索开关、侧边栏收起状态 */
 type Settings = {
   apiKey: string | null
   locale: Locale
   themePreference: ThemePreference
   location: UserLocation | null
   ttsVoice: TtsVoice
+  /** 自动朗读新回复；左上角按钮控制 */
+  autoRead: boolean
+  /** 自动朗读时机；关闭自动朗读时保留上次选择 */
+  autoReadMode: AutoReadMode
   /** 每次生成请求作为 system 发送，完全替换默认身份说明 */
   systemPrompt: string
   /** 下一条消息使用的模型；已有回复按自身快照续写 */
@@ -34,6 +41,8 @@ const KEYS = {
   location: 'chat-demo:location',
   themePreference: 'chat-demo:theme-preference',
   ttsVoice: 'chat-demo:tts-voice',
+  autoRead: 'chat-demo:auto-read',
+  autoReadMode: 'chat-demo:auto-read-mode',
   systemPrompt: 'chat-demo:system-prompt',
   model: 'chat-demo:model',
   thinking: 'chat-demo:thinking',
@@ -114,6 +123,8 @@ export const useSettings = create<Settings>(() => ({
   location: initialLocation(),
   themePreference: initialThemePreference(),
   ttsVoice: initialTtsVoice(),
+  autoRead: read(KEYS.autoRead) === 'true',
+  autoReadMode: read(KEYS.autoReadMode) === 'stream' ? 'stream' : 'done',
   systemPrompt: initialSystemPrompt(),
   model: initialModel(),
   thinking: read(KEYS.thinking) === 'true',
@@ -140,6 +151,16 @@ export const setThemePreference = (themePreference: ThemePreference) => {
 export const setTtsVoice = (ttsVoice: TtsVoice) => {
   write(KEYS.ttsVoice, ttsVoice)
   useSettings.setState({ ttsVoice })
+}
+
+export const setAutoRead = (autoRead: boolean) => {
+  write(KEYS.autoRead, String(autoRead))
+  useSettings.setState({ autoRead })
+}
+
+export const setAutoReadMode = (autoReadMode: AutoReadMode) => {
+  write(KEYS.autoReadMode, autoReadMode)
+  useSettings.setState({ autoReadMode })
 }
 
 export const setSystemPrompt = (systemPrompt: string) => {

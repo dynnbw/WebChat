@@ -3,6 +3,7 @@ import { useTranslate } from '../../i18n/index.js'
 import { newChat } from '../../services/chat/store.js'
 import { IconButton } from '../base/IconButton.js'
 import { openMobileSider } from '../sider/mobileSiderState.js'
+import { AutoReadButton } from '../speech/AutoReadButton.js'
 import { openStats } from '../stats/statsViewState.js'
 import styles from './MobileHeader.module.css'
 
@@ -22,19 +23,22 @@ export const MobileHeader = ({ title }: { title?: string }) => {
         <IconButton
           size="m"
           tone="primary"
-          icon={<IconNewChatOutline20 />}
-          tooltip={t('newChat')}
-          onClick={newChat}
-        />
-        <IconButton
-          size="m"
-          tone="primary"
           icon={<IconChartOutline16 />}
           tooltip={t('statsTitle')}
           onClick={openStats}
         />
       </div>
-      {title === undefined ? null : <div className={styles.title}>{title}</div>}
+      <div className={styles.title}>{title ?? ''}</div>
+      <div className={styles.group}>
+        <AutoReadButton />
+        <IconButton
+          size="m"
+          tone="primary"
+          icon={<IconNewChatOutline20 />}
+          tooltip={t('newChat')}
+          onClick={newChat}
+        />
+      </div>
     </div>
   )
 }

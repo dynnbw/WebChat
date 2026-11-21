@@ -14,7 +14,7 @@ export const en = {
     'Chats or attachments have not been saved locally. Retry before closing this page.',
   sessionDeleteFailed: 'Unable to delete this chat. Please try again.',
   settings: 'Settings',
-  appName: 'API usage demo',
+  appName: 'WebChat',
   deleteSessionModalContentTitle: 'Delete chat?',
   deleteSessionWithFilesDescription:
     'This chat and its uploaded files will be permanently deleted and cannot be recovered. Delete this chat?',
@@ -212,6 +212,14 @@ export const en = {
   ttsStop: 'Stop reading',
   ttsUnavailable: 'This answer cannot be read aloud right now',
   ttsFailed: 'Failed to read aloud. Please try again later.',
+  autoReadEnable: 'Enable auto-read',
+  autoReadDisable: 'Disable auto-read',
+  settingsAutoRead: 'Auto-read',
+  settingsAutoReadHint:
+    'Read when complete reads the full answer after it finishes; read while streaming synthesizes sentences as they arrive.',
+  autoReadOff: 'Off',
+  autoReadDone: 'Read when complete',
+  autoReadStream: 'Read while streaming',
   retry: 'Retry',
   latestReminderLanguage: 'English',
   settingsLocaleZhCN: 'Simplified Chinese',

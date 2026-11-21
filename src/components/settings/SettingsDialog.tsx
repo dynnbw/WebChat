@@ -20,13 +20,17 @@ import { useChatStore } from '../../services/chat/store.js'
 import { regionCodes, getRegionName, provinces } from '../../services/location.js'
 import {
   isChineseBrowser,
+  setAutoRead,
+  setAutoReadMode,
   setLocale,
   setLocation,
   setThemePreference,
   setTtsVoice,
   useSettings,
+  type AutoReadMode,
   type ThemePreference,
 } from '../../services/settings.js'
+import { primeReadAloud } from '../../services/speech/readAloud.js'
 import { useTranslate, type TranslationKey, type TranslationMessage } from '../../i18n/index.js'
 import { Button } from '../base/Button.js'
 import { Modal } from '../base/Modal.js'
@@ -38,7 +42,7 @@ import { SystemPromptSetting } from './SystemPromptSetting.js'
 import styles from './Settings.module.css'
 
 /**
- * 设置弹窗：分「通用设置」（主题、语言、系统提示词、朗读音色、位置）与「数据管理」（API Key、导入、导出、删除）。
+ * 设置弹窗：分「通用设置」（主题、语言、系统提示词、朗读音色、自动朗读、位置）与「数据管理」（API Key、导入、导出、删除）。
  * 桌面端为居中弹窗、左侧导航；移动端为底部弹层、导航横排在内容上方
  */
 export const SettingsDialog = () => {
@@ -101,6 +105,7 @@ const SettingsContent = () => {
               <LocaleSetting />
               <SystemPromptSetting />
               <TtsVoiceSetting />
+              <AutoReadSetting />
               <LocationSetting />
             </>
           ) : (
@@ -310,6 +315,43 @@ const TtsVoiceSetting = () => {
             { value: 'tide', label: t('settingsTtsVoiceTide') },
           ]}
           onChange={setTtsVoice}
+        />
+      }
+    />
+  )
+}
+
+type AutoReadChoice = 'off' | AutoReadMode
+
+/** 自动朗读时机；左上角按钮只控制开关，这里选择完成后还是流式朗读 */
+const AutoReadSetting = () => {
+  const t = useTranslate()
+  const autoRead = useSettings((state) => state.autoRead)
+  const autoReadMode = useSettings((state) => state.autoReadMode)
+  const value: AutoReadChoice = autoRead ? autoReadMode : 'off'
+  return (
+    <SettingCell
+      label={t('settingsAutoRead')}
+      description={t('settingsAutoReadHint')}
+      status={null}
+      action={
+        <Select<AutoReadChoice>
+          ariaLabel={t('settingsAutoRead')}
+          value={value}
+          options={[
+            { value: 'off', label: t('autoReadOff') },
+            { value: 'done', label: t('autoReadDone') },
+            { value: 'stream', label: t('autoReadStream') },
+          ]}
+          onChange={(next) => {
+            if (next === 'off') {
+              setAutoRead(false)
+              return
+            }
+            primeReadAloud()
+            setAutoReadMode(next)
+            setAutoRead(true)
+          }}
         />
       }
     />

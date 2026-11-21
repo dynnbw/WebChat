@@ -1,3 +1,4 @@
+import clsx from 'clsx'
 import { useEffect } from 'react'
 import { useTranslate } from '../i18n/index.js'
 import { useSettings } from '../services/settings.js'
@@ -24,9 +25,13 @@ import { stopReadAloud } from '../services/speech/readAloud.js'
 import { CollapsedSider } from '../components/sider/CollapsedSider.js'
 import { closeMobileSider } from '../components/sider/mobileSiderState.js'
 import { MobileSider, Sider } from '../components/sider/Sider.js'
+import { consumeSidebarFocus } from '../components/sider/sidebarFocus.js'
 import { StatsView } from '../components/stats/StatsView.js'
 import { useStatsView } from '../components/stats/statsViewState.js'
 import styles from './App.module.css'
+
+/** 与侧边栏展开动画时长保持一致，展开后再把焦点交给收起按钮 */
+const SIDEBAR_OPEN_MS = 220
 
 export const App = () => {
   const t = useTranslate()
@@ -77,6 +82,20 @@ export const App = () => {
     }
   }, [statsOpen])
 
+  // 切换侧边栏后把焦点交给新出现的按钮；展开时等宽度动画结束
+  useEffect(() => {
+    const target = siderCollapsed ? 'expand' : 'collapse'
+    if (!consumeSidebarFocus(target)) {
+      return
+    }
+    const id = target === 'expand' ? 'sider-expand-button' : 'sider-collapse-button'
+    const timer = window.setTimeout(
+      () => document.getElementById(id)?.focus(),
+      target === 'collapse' ? SIDEBAR_OPEN_MS : 0
+    )
+    return () => window.clearTimeout(timer)
+  }, [siderCollapsed])
+
   useEffect(() => {
     void initChat()
     // 首次打开先在设置里输入 API Key
@@ -86,7 +105,16 @@ export const App = () => {
   return (
     <>
       <div ref={frameRef} className={styles.frame}>
-        {isMobile ? <MobileSider /> : siderCollapsed ? null : <Sider />}
+        {isMobile ? (
+          <MobileSider />
+        ) : (
+          <div
+            className={clsx(styles.siderSlot, siderCollapsed && styles.siderSlotCollapsed)}
+            aria-hidden={siderCollapsed}
+          >
+            <Sider />
+          </div>
+        )}
         <main className={styles.main}>
           {saveError ? (
             <div className={styles.saveError} role="alert">
@@ -102,7 +130,7 @@ export const App = () => {
             </div>
           ) : null}
           <div className={styles.content}>
-            {siderCollapsed ? <CollapsedSider /> : null}
+            {!isMobile ? <CollapsedSider visible={siderCollapsed} /> : null}
             {statsOpen ? (
               <StatsView siderCollapsed={siderCollapsed} />
             ) : !ready || (activeId !== null && !session) ? (
