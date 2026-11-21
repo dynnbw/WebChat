@@ -4,7 +4,9 @@ import { fileURLToPath } from 'node:url'
 import { defineConfig } from '@rspack/cli'
 import { rspack, type Configuration } from '@rspack/core'
 
-const dev = process.env.NODE_ENV !== 'production'
+// rspack CLI 的 build 子命令按生产模式构建，serve 使用开发模式；
+// 不依赖 POSIX 的 NODE_ENV=... 前缀，Windows 下也能直接运行 pnpm build。
+const dev = !process.argv.includes('build')
 const targets = ['chrome >= 105', 'edge >= 105', 'safari >= 16', 'firefox >= 110']
 const root = path.dirname(fileURLToPath(import.meta.url))
 const { version } = JSON.parse(
