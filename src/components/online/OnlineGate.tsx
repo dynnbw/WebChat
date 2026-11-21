@@ -67,6 +67,9 @@ export const OnlineGate = ({ children }: { children: ReactNode }) => {
             <Button variant="outlined" size="m" onClick={() => void check()}>
               {t('retry')}
             </Button>
+            <Button variant="outlined" size="m" onClick={() => setAppMode('local')}>
+              {t('onlineUseOffline')}
+            </Button>
           </div>
         ) : (
           <form className={styles.form} onSubmit={submit}>

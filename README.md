@@ -83,6 +83,7 @@ This launcher runs the development servers. With no argument, it starts the onli
 - Usage statistics for API requests, search calls, and token usage over time, split by model and available in both local and online modes.
 - Optional per-chat cloud backup, plus a server-hosted online mode with a server-side API key. Device backups are read-only; an online chat can be created from a backup and the backup is then removed.
 - Runtime online/offline switch in the server-hosted build, so the same origin can be used with either cloud or local history.
+- Installable PWA: production builds ship a manifest, icons, and a service worker that caches the app shell. API and cloud requests are never cached.
 - Simplified Chinese and English, light and dark themes, mobile layouts, location settings, and chat history import and export.
 
 ## Data and storage
@@ -112,14 +113,24 @@ This launcher runs the development servers. With no argument, it starts the onli
 
 Sending messages, uploading attachments, and using speech features sends the relevant content to the configured API service. In online mode those requests pass through the backend proxy.
 
+### PWA and offline behavior
+
+- `pnpm build` and `pnpm build:online` also generate `sw.js` alongside the manifest and icons.
+- Installation requires HTTPS or localhost; `file://` pages cannot register a service worker.
+- The service worker caches the app shell and static build assets. It does not cache `/api`, cloud conversations, or cross-origin API requests.
+- A local/static install can open and use IndexedDB history offline; sending messages still requires network access.
+- An online install can open the shell offline, but cloud history is unavailable. The login error screen offers “Use offline” to switch to local mode.
+- New service worker versions wait for old pages to close, so updates apply on a later launch. Development servers do not register a service worker.
+- To test installation and offline behavior, serve `dist/` or `dist-online/` over localhost or HTTPS.
+
 ## Development
 
 | Command | Description |
 | --- | --- |
 | `pnpm dev` | Start the static/local development server |
 | `pnpm dev:online` | Start the online build; proxies `/api` to `127.0.0.1:8787` |
-| `pnpm build` | Build the static app into `dist/` |
-| `pnpm build:online` | Build the server-hosted app into `dist-online/` |
+| `pnpm build` | Build the static app into `dist/` and generate `sw.js` |
+| `pnpm build:online` | Build the server-hosted app into `dist-online/` and generate `sw.js` |
 | `pnpm type` | Run TypeScript type checks |
 | `pnpm lint` | Lint with oxlint |
 | `pnpm format` | Format with oxfmt |
@@ -152,7 +163,9 @@ src/
     online/            Online/local runtime mode and authentication
     speech/            Audio recording and read-aloud playback
     stats.ts           Usage aggregation
+  pwa/                 Manifest, icons, and service worker registration
   utils/               Shared utilities
+scripts/               Build and PWA service worker tooling
 server/                Optional API key proxy, cloud backup, and online-mode server
 ```
 

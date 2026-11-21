@@ -133,6 +133,10 @@ files/          云端图片原件，文件名是附件 id
 
 SSE 需要关闭反向代理的响应缓冲；Caddy 示例中的 `flush_interval -1` 就是为此设置的。请同时确认反向代理的请求体大小限制不低于 `MAX_FILE_BYTES`。
 
+在线版构建包含 PWA 的 `manifest.json` 和 `sw.js`。Caddy 示例给 `/sw.js` 设置了 `Cache-Control: no-cache`。PWA 安装和 Service Worker 需要 HTTPS。
+
+标准 Caddy 不带 dynv6 DNS 模块。可以先用 acme.sh 的 `dns_dynv6` 申请证书，再在 Caddyfile 中用 `tls` 指向 `fullchain.pem` 和 `privkey.pem`；也可以自行构建带 dynv6 模块的 Caddy。示例见 [Caddyfile.example](Caddyfile.example)。
+
 Windows 可以用任务计划程序、NSSM 或其他服务管理器保持后端运行；Linux 可以用 systemd。无论哪种方式，都要让工作目录指向 `server/`，或显式设置 `DATA_DIR` 的绝对路径。
 
 ## Scripts

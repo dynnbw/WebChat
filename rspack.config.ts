@@ -105,9 +105,18 @@ export const createConfig = ({
     new rspack.DefinePlugin({
       __API_ORIGIN__: JSON.stringify(apiOrigin),
       __ONLINE_MODE__: JSON.stringify(online),
+      __PWA_ENABLED__: JSON.stringify(!dev),
     }),
     new rspack.CopyRspackPlugin({
-      patterns: [{ from: path.resolve(root, 'LICENSE'), to: 'LICENSE', toType: 'file' }],
+      patterns: [
+        { from: path.resolve(root, 'LICENSE'), to: 'LICENSE', toType: 'file' },
+        {
+          from: path.resolve(root, 'src/pwa/manifest.json'),
+          to: 'manifest.json',
+          toType: 'file',
+        },
+        { from: path.resolve(root, 'src/pwa/icons'), to: 'static/pwa' },
+      ],
     }),
   ],
   performance: { hints: false },

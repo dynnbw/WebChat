@@ -1,22 +1,28 @@
-# 把域名、端口和 TLS 方式替换成自己的配置。
-# 下面使用 dynv6 DNS-01 作为示例；不使用时删除 tls 块，
-# 由 Caddy 自动申请证书，或改成自己的 DNS provider。
-chat.example.com:54321 {
-  tls {
-    dns dynv6 {env.DYNV6_TOKEN}
-  }
+# Standard Caddy does not include a dynv6 DNS-01 solver.
+# Obtain a certificate first, for example with acme.sh:
+#   acme.sh --issue --server letsencrypt --dns dns_dynv6 -d chat.example.com
+#   acme.sh --install-cert -d chat.example.com --fullchain-file /path/fullchain.pem \
+#     --key-file /path/privkey.pem --reloadcmd "caddy reload --config ..."
+# Then point tls at the installed files.
+{
+	auto_https off
+}
 
-  # SSE 不能缓冲，否则回复会一次性出现
-  handle /api/* {
-    reverse_proxy 127.0.0.1:8787 {
-      flush_interval -1
-    }
-  }
+https://chat.example.com:54321 {
+	tls /path/to/fullchain.pem /path/to/privkey.pem
 
-  # 替换为实际的 dist-online 目录
-  handle {
-    root * D:/WebChat/dist-online
-    try_files {path} /index.html
-    file_server
-  }
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8787 {
+			flush_interval -1
+		}
+	}
+
+	handle {
+		root * D:/WebChat/dist-online
+		try_files {path} /index.html
+		file_server
+	}
+
+	@serviceWorker path /sw.js
+	header @serviceWorker Cache-Control "no-cache"
 }

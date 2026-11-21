@@ -83,6 +83,7 @@ start.bat local
 - 数据统计：按时间查看 API 请求、搜索调用和 token 用量，按模型拆分，本地版和在线版都可用。
 - 可按会话开启云端备份，并提供由服务端持有 API Key 的在线版。设备备份只读；可以从备份创建在线对话，创建后原备份会被删除。
 - 在线版支持运行时切换在线/离线模式，同一 origin 下可以分别使用云端或本地历史。
+- 支持安装为 PWA：生产构建包含 manifest、图标和 Service Worker，缓存应用壳；不会缓存 API 或云端数据。
 - 简体中文与英文、浅色与深色主题、移动端布局、位置设置、历史导入导出。
 
 ## 数据
@@ -112,14 +113,24 @@ start.bat local
 
 发送对话、上传附件和使用语音功能时，相应内容会提交给配置的 API 服务；在线版会经过后端代理。
 
+### PWA 与离线行为
+
+- `pnpm build` 和 `pnpm build:online` 会在产物中同时生成 `sw.js`、manifest 和图标。
+- 安装要求 HTTPS 或 localhost；`file://` 页面无法注册 Service Worker。
+- Service Worker 只缓存应用壳和构建静态资源，不缓存 `/api`、云端会话或跨域 API 请求。
+- 本地/静态版安装后离线可以打开界面并使用 IndexedDB 历史；发消息仍需要网络。
+- 在线版安装后离线只能打开应用壳，云端历史不可用；登录失败页提供「离线使用」入口，可切到本地模式。
+- 新版本 Service Worker 会等旧页面关闭后激活，因此更新在下次打开时生效。开发服务器不注册 Service Worker。
+- 要验证安装和离线效果，请通过 localhost 或 HTTPS 提供 `dist/` 或 `dist-online/`。
+
 ## 开发
 
 | 命令 | 用途 |
 | --- | --- |
 | `pnpm dev` | 启动静态/本地版开发服务器 |
 | `pnpm dev:online` | 启动在线版开发服务器；`/api` 代理到 `127.0.0.1:8787` |
-| `pnpm build` | 构建静态版到 `dist/` |
-| `pnpm build:online` | 构建后端托管的在线版到 `dist-online/` |
+| `pnpm build` | 构建静态版到 `dist/`，并生成 `sw.js` |
+| `pnpm build:online` | 构建后端托管的在线版到 `dist-online/`，并生成 `sw.js` |
 | `pnpm type` | TypeScript 类型检查 |
 | `pnpm lint` | oxlint 检查 |
 | `pnpm format` | oxfmt 格式化 |
@@ -152,7 +163,9 @@ src/
     online/            在线/离线运行模式与认证
     speech/            录音与朗读
     stats.ts           用量聚合
+  pwa/                 manifest、图标与 Service Worker 注册
   utils/               通用工具
+scripts/               构建与 PWA Service Worker 工具
 server/                可选的 API Key 代理、云端备份与在线版服务
 ```
 

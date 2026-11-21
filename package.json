@@ -12,8 +12,8 @@
   "scripts": {
     "dev": "rspack serve -c rspack.config.ts",
     "dev:online": "rspack serve -c rspack.online.config.ts",
-    "build": "rspack build -c rspack.config.ts",
-    "build:online": "rspack build -c rspack.online.config.ts",
+    "build": "rspack build -c rspack.config.ts && node scripts/generate-service-worker.mjs dist",
+    "build:online": "rspack build -c rspack.online.config.ts && node scripts/generate-service-worker.mjs dist-online",
     "type": "tsc -p tsconfig.json",
     "lint": "oxlint src rspack.config.ts rspack.online.config.ts",
     "format": "oxfmt --write ."

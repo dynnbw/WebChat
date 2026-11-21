@@ -11,6 +11,9 @@ declare const __API_ORIGIN__: string
 /** 是否为后端托管的在线版构建 */
 declare const __ONLINE_MODE__: boolean
 
+/** 是否为 production 构建；PWA Service Worker 只在生产构建注册 */
+declare const __PWA_ENABLED__: boolean
+
 /** Prism 语言包通过副作用注册到全局 Prism */
 declare module 'prismjs/components/*' {}
 
