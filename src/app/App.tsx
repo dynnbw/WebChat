@@ -24,6 +24,8 @@ import { stopReadAloud } from '../services/speech/readAloud.js'
 import { CollapsedSider } from '../components/sider/CollapsedSider.js'
 import { closeMobileSider } from '../components/sider/mobileSiderState.js'
 import { MobileSider, Sider } from '../components/sider/Sider.js'
+import { StatsView } from '../components/stats/StatsView.js'
+import { useStatsView } from '../components/stats/statsViewState.js'
 import styles from './App.module.css'
 
 export const App = () => {
@@ -49,6 +51,7 @@ export const App = () => {
     state.activeId === null ? false : Object.hasOwn(state.streaming, state.activeId)
   )
   const activeId = useChatStore((state) => state.activeId)
+  const statsOpen = useStatsView((state) => state.open)
 
   usePreventPageScroll(isMobile)
 
@@ -66,6 +69,13 @@ export const App = () => {
   useEffect(stopReadAloud, [activeId])
   // 移动端选中会话、切换布局后收起抽屉
   useEffect(closeMobileSider, [activeId, isMobile])
+  // 打开统计页时收起搜索面板和移动端抽屉，会话状态保持不变
+  useEffect(() => {
+    if (statsOpen) {
+      closeSearchPanel()
+      closeMobileSider()
+    }
+  }, [statsOpen])
 
   useEffect(() => {
     void initChat()
@@ -93,7 +103,9 @@ export const App = () => {
           ) : null}
           <div className={styles.content}>
             {siderCollapsed ? <CollapsedSider /> : null}
-            {!ready || (activeId !== null && !session) ? (
+            {statsOpen ? (
+              <StatsView siderCollapsed={siderCollapsed} />
+            ) : !ready || (activeId !== null && !session) ? (
               <div className={styles.loadingView}>
                 {isMobile ? <MobileHeader /> : null}
                 <div className={styles.loadingState} role="status" aria-live="polite">

@@ -7,6 +7,7 @@ import type { SessionSummary } from '../../services/chat/types.js'
 import { IconButton } from '../base/IconButton.js'
 import { Menu } from '../base/Menu.js'
 import { closeMobileSider } from './mobileSiderState.js'
+import { closeStats } from '../stats/statsViewState.js'
 import styles from './SessionItem.module.css'
 
 export const SessionItem = memo(function SessionItem({
@@ -20,6 +21,7 @@ export const SessionItem = memo(function SessionItem({
 }) {
   const t = useTranslate()
   const [editing, setEditing] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const displayTitle = session.title || t('untitledChat')
 
   if (editing) {
@@ -52,18 +54,26 @@ export const SessionItem = memo(function SessionItem({
       className={clsx(styles.item, active && styles.active)}
       onClick={() => {
         selectSession(session.id)
+        closeStats()
         closeMobileSider()
       }}
     >
       <div className={styles.title}>{displayTitle}</div>
-      <div className={styles.action} onClick={(event) => event.stopPropagation()}>
+      <div
+        className={clsx(styles.action, menuOpen && styles.actionOpen)}
+        onClick={(event) => event.stopPropagation()}
+      >
         <Menu
+          onOpenChange={setMenuOpen}
           options={[
             {
               key: 'rename',
               label: t('sessionItemMenuRenameOption'),
               icon: <IconEditOutline16 />,
-              onSelect: () => setEditing(true),
+              onSelect: () => {
+                setMenuOpen(false)
+                setEditing(true)
+              },
             },
             {
               key: 'delete',

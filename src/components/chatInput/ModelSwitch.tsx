@@ -35,7 +35,9 @@ export const ModelSwitch = () => {
           >
             <IconModelOutline14 />
             <span className={styles.toggleLabel}>{t(current.labelKey)}</span>
-            <IconChevronDownOutline14 />
+            <span className={styles.modelChevron}>
+              <IconChevronDownOutline14 />
+            </span>
           </button>
         )}
       </Menu>

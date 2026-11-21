@@ -78,6 +78,9 @@ const getDB = () =>
 export const loadSessionSummaries = async (): Promise<SessionSummary[]> =>
   (await (await getDB()).getAll('sessionSummaries')).map(toSessionSummary)
 
+/** 统计和导出使用：一次读取全部会话（含消息），不读取附件原件。 */
+export const loadAllSessions = async (): Promise<Session[]> => (await getDB()).getAll('sessions')
+
 export const loadSession = async (id: string): Promise<Session | undefined> =>
   (await getDB()).get('sessions', id)
 

@@ -45,6 +45,11 @@
   margin-left: 4px;
 }
 
+/* 菜单打开期间保持触发器可见，避免鼠标移出后锚点消失、浮层跳到左上角 */
+.actionOpen {
+  display: flex;
+}
+
 .renameInput {
   box-sizing: border-box;
   width: 100%;

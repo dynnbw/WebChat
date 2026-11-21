@@ -7,6 +7,20 @@
   padding: 12px 10px 4px;
 }
 
+.group {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+  box-sizing: border-box;
+  height: 40px;
+  padding: 0 2px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 100px;
+  background-color: var(--dsw-alias-bg-layer-3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
 .title {
   flex: 1;
   min-width: 0;

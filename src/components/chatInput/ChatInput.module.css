@@ -330,3 +330,28 @@
     cursor: not-allowed;
   }
 }
+
+/* 移动端：语音并入发送位后，压缩开关间距和模型箭头，保持单行 */
+@media not all and (min-width: 768px) {
+  .functionRow {
+    padding: 8px;
+  }
+
+  .toggles {
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .toggles::-webkit-scrollbar {
+    display: none;
+  }
+
+  .toggle {
+    padding: 0 7px;
+  }
+
+  .modelChevron {
+    display: none;
+  }
+}

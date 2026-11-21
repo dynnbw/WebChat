@@ -14,12 +14,15 @@ import styles from './VoiceButton.module.css'
 export const VoiceButton = ({
   status,
   disabled = false,
+  primary = false,
   seconds,
   onClick,
 }: {
   status: VoiceInputStatus
   /** 非安全上下文中按钮置灰，tooltip 提示录音需要 HTTPS */
   disabled?: boolean
+  /** 位于发送按钮位置时使用品牌色实心圆 */
+  primary?: boolean
   /** 本次录音已录秒数，录音中显示在按钮左侧 */
   seconds: number
   onClick: () => void
@@ -43,6 +46,7 @@ export const VoiceButton = ({
           type="button"
           className={clsx(
             styles.button,
+            primary && status === 'idle' && styles.primary,
             recording && styles.recording,
             disabled && styles.disabled
           )}

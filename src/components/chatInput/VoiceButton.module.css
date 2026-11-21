@@ -23,6 +23,7 @@
   flex-shrink: 0;
   width: 34px;
   height: 34px;
+  margin-left: 6px;
   padding: 0;
   border: none;
   border-radius: 50%;
@@ -44,6 +45,25 @@
 
   &:focus-visible {
     box-shadow: 0 0 0 2px var(--dsw-alias-button-primary-fill);
+  }
+}
+
+.primary {
+  background-color: var(--dsw-alias-button-primary-fill);
+  color: var(--dsw-static-neutral-bluish-00);
+
+  &:hover:not(.recording):not(.disabled) {
+    background-color: var(--dsw-alias-button-primary-hover);
+  }
+
+  &:active:not(.recording):not(.disabled) {
+    background-color: var(--dsw-alias-button-primary-hover);
+  }
+
+  &.disabled {
+    background-color: var(--dsw-alias-button-primary-fill);
+    color: var(--dsw-static-neutral-bluish-00);
+    opacity: 0.4;
   }
 }
 

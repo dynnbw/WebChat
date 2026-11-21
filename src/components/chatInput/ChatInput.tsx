@@ -63,6 +63,11 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
     if (!toggles) {
       return
     }
+    toggles.classList.remove(styles.collapsedToggles)
+    // 移动端让标签始终显示；换行后空间足够，极窄屏幕可横向滚动
+    if (isMobile) {
+      return
+    }
 
     const updateLabels = () => {
       toggles.classList.remove(styles.collapsedToggles)
@@ -73,7 +78,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
     const observer = new ResizeObserver(updateLabels)
     observer.observe(toggles)
     return () => observer.disconnect()
-  }, [t])
+  }, [t, isMobile])
 
   const acceptFiles = (files: File[]) => {
     if (files.length === 0 || useChatStore.getState().importingHistory || !ensureApiKey()) {
@@ -132,6 +137,12 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
 
   // 排队、上传中或上传失败的附件都留在输入框，全部上传成功后才能发送
   const canSend = !importingHistory && !streaming && voice.status === 'idle' && draftReady
+  // 空输入时把发送位置让给语音按钮；录音/转写中始终保留，方便停止或取消
+  const hasDraftContent = text.trim() !== '' || attachments.length > 0
+  const showVoice =
+    !importingHistory &&
+    !streaming &&
+    (voice.status !== 'idle' || !hasDraftContent)
 
   const send = () => {
     if (
@@ -230,19 +241,6 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
           </Tooltip>
         </div>
         <div className={styles.right}>
-          <VoiceButton
-            status={voice.status}
-            disabled={!voice.available}
-            seconds={voice.seconds}
-            onClick={() => {
-              if (
-                voice.status !== 'idle' ||
-                (!useChatStore.getState().importingHistory && ensureApiKey())
-              ) {
-                void voice.toggle()
-              }
-            }}
-          />
           <IconButton
             size="m"
             tone="primary"
@@ -274,6 +272,21 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
             >
               <IconStopFill16 />
             </button>
+          ) : showVoice ? (
+            <VoiceButton
+              primary={voice.status === 'idle'}
+              status={voice.status}
+              disabled={!voice.available}
+              seconds={voice.seconds}
+              onClick={() => {
+                if (
+                  voice.status !== 'idle' ||
+                  (!useChatStore.getState().importingHistory && ensureApiKey())
+                ) {
+                  void voice.toggle()
+                }
+              }}
+            />
           ) : (
             <button
               type="button"
