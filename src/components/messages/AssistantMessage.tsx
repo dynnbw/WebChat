@@ -15,6 +15,7 @@ import {
   toggleReadAloud,
 } from '../../services/speech/readAloud.js'
 import { useSettings } from '../../services/settings.js'
+import { ONLINE_MODE } from '../../services/online/mode.js'
 import { showToast } from '../base/toastState.js'
 import type { AssistantMessage as AssistantMessageType } from '../../services/chat/types.js'
 import { openSettings } from '../settings/settingsDialogState.js'
@@ -43,6 +44,7 @@ export const AssistantMessage = memo(function AssistantMessage({
   isLast,
   streaming,
   busy,
+  readOnly = false,
   versions,
   onSelectVersion,
 }: {
@@ -51,6 +53,7 @@ export const AssistantMessage = memo(function AssistantMessage({
   isLast: boolean
   streaming: boolean
   busy: boolean
+  readOnly?: boolean
   versions: MessageVersions
   onSelectVersion: SelectMessageVersion
 }) {
@@ -239,7 +242,7 @@ export const AssistantMessage = memo(function AssistantMessage({
           <IconWarningOutline16 />
           <span>
             {notice.text}
-            {notice.action === 'apiKey' ? (
+            {notice.action === 'apiKey' && !ONLINE_MODE ? (
               <>
                 {' '}
                 <button
@@ -293,7 +296,7 @@ export const AssistantMessage = memo(function AssistantMessage({
               icon={<IconRefreshOutline16 />}
               tooltip={t('regenerate')}
               tooltipPlacement="bottom"
-              disabled={busy || refused}
+              disabled={busy || refused || readOnly}
               onClick={() => {
                 stopReadAloud()
                 if (autoRead) {
@@ -303,7 +306,7 @@ export const AssistantMessage = memo(function AssistantMessage({
               }}
             />
           </div>
-          {isLast && canContinueReply(message) ? (
+          {isLast && !readOnly && canContinueReply(message) ? (
             <Button
               variant="outlined"
               size="s"

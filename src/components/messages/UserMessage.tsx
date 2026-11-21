@@ -26,6 +26,7 @@ export const UserMessage = memo(function UserMessage({
   isFirst,
   isLast,
   busy,
+  readOnly = false,
   versions,
   onSelectVersion,
 }: {
@@ -36,6 +37,7 @@ export const UserMessage = memo(function UserMessage({
   isFirst: boolean
   isLast: boolean
   busy: boolean
+  readOnly?: boolean
   versions: MessageVersions
   onSelectVersion: SelectMessageVersion
 }) {
@@ -55,6 +57,9 @@ export const UserMessage = memo(function UserMessage({
   }, [editing, draft])
 
   const sendEdit = () => {
+    if (readOnly) {
+      return
+    }
     if (canSend && ensureApiKey() && editMessage(sessionId, message.id, draft.trim())) {
       stopReadAloud()
       setEditing(false)
@@ -118,16 +123,18 @@ export const UserMessage = memo(function UserMessage({
           <div className={styles.bottom}>
             <div className={clsx(styles.actions, isLast && styles.alwaysShow)}>
               {message.content ? <CopyButton text={message.content} /> : null}
-              <IconButton
-                icon={<IconEditOutline16 />}
-                tooltip={t('editMessage')}
-                tooltipPlacement="bottom"
-                disabled={busy}
-                onClick={() => {
-                  setDraft(message.content)
-                  setEditing(true)
-                }}
-              />
+              {readOnly ? null : (
+                <IconButton
+                  icon={<IconEditOutline16 />}
+                  tooltip={t('editMessage')}
+                  tooltipPlacement="bottom"
+                  disabled={busy}
+                  onClick={() => {
+                    setDraft(message.content)
+                    setEditing(true)
+                  }}
+                />
+              )}
             </div>
             <BranchSwitcher versions={versions} disabled={busy} onSelect={onSelectVersion} />
           </div>

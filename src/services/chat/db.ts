@@ -1,4 +1,12 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
+import {
+  CloudError,
+  cloudDeleteSession,
+  cloudGetSession,
+  cloudListSessions,
+  cloudPutSession,
+} from '../cloud/client.js'
+import { ONLINE_MODE } from '../online/mode.js'
 import { toSessionSummary, type Session, type SessionSummary } from './types.js'
 
 /** IndexedDB 存储结构版本；新增或调整存储、索引时递增。 */
@@ -75,16 +83,54 @@ const getDB = () =>
     throw error
   }))
 
-export const loadSessionSummaries = async (): Promise<SessionSummary[]> =>
-  (await (await getDB()).getAll('sessionSummaries')).map(toSessionSummary)
+export const loadSessionSummaries = async (): Promise<SessionSummary[]> => {
+  if (ONLINE_MODE) {
+    return (await cloudListSessions('', null)).map(({ kind, ...summary }) => ({
+      ...summary,
+      cloudKind: kind,
+    }))
+  }
+  return (await (await getDB()).getAll('sessionSummaries')).map(toSessionSummary)
+}
 
 /** 统计和导出使用：一次读取全部会话（含消息），不读取附件原件。 */
-export const loadAllSessions = async (): Promise<Session[]> => (await getDB()).getAll('sessions')
+export const loadAllSessions = async (): Promise<Session[]> => {
+  if (ONLINE_MODE) {
+    const summaries = await cloudListSessions('', null)
+    const details = await Promise.all(
+      summaries.map((summary) => cloudGetSession('', null, summary.id))
+    )
+    return details.map((detail) => ({ ...detail.session, cloudKind: detail.kind }))
+  }
+  return (await getDB()).getAll('sessions')
+}
 
-export const loadSession = async (id: string): Promise<Session | undefined> =>
-  (await getDB()).get('sessions', id)
+export const loadSession = async (id: string): Promise<Session | undefined> => {
+  if (ONLINE_MODE) {
+    try {
+      const detail = await cloudGetSession('', null, id)
+      return { ...detail.session, cloudKind: detail.kind }
+    } catch (error) {
+      if (error instanceof CloudError && error.status === 404) {
+        return undefined
+      }
+      throw error
+    }
+  }
+  return (await getDB()).get('sessions', id)
+}
 
 export const saveSession = async (session: Session, files: StoredFile[] = []): Promise<void> => {
+  if (ONLINE_MODE) {
+    if (files.length > 0) {
+      await saveFiles(files)
+    }
+    if (session.cloudKind === 'backup') {
+      return
+    }
+    await cloudPutSession('', null, 'online', session)
+    return
+  }
   const summary = storedSummary(session)
   const tx = (await getDB()).transaction(['sessions', 'sessionSummaries', 'files'], 'readwrite')
   await Promise.all([
@@ -106,6 +152,14 @@ export const saveSession = async (session: Session, files: StoredFile[] = []): P
 
 /** 未打开的会话也可重命名，只读取该会话，原子更新详情和列表。 */
 export const renameSession = async (id: string, title: string): Promise<void> => {
+  if (ONLINE_MODE) {
+    const detail = await cloudGetSession('', null, id)
+    if (detail.kind === 'backup') {
+      return
+    }
+    await cloudPutSession('', null, 'online', { ...detail.session, title })
+    return
+  }
   const tx = (await getDB()).transaction(['sessions', 'sessionSummaries'], 'readwrite')
   await Promise.all([
     (async () => {
@@ -128,6 +182,10 @@ export const renameSession = async (id: string, title: string): Promise<void> =>
 
 /** 删除会话，仅清理已无会话引用的本地原件；远端文件不删。 */
 export const deleteSession = async (sessionId: string): Promise<void> => {
+  if (ONLINE_MODE) {
+    await cloudDeleteSession('', null, sessionId)
+    return
+  }
   const tx = (await getDB()).transaction(['sessions', 'sessionSummaries', 'files'], 'readwrite')
   await Promise.all([
     (async () => {
@@ -157,8 +215,20 @@ const putFiles = async (store: 'files' | 'filesStaging', files: StoredFile[]) =>
 
 export const saveFiles = (files: StoredFile[]): Promise<void> => putFiles('files', files)
 
-export const loadFile = async (id: string): Promise<Blob | undefined> =>
-  (await (await getDB()).get('files', id))?.blob
+export const loadFile = async (id: string): Promise<Blob | undefined> => {
+  const local = (await (await getDB()).get('files', id))?.blob
+  if (!local && ONLINE_MODE) {
+    const response = await fetch(`/api/cloud/files/${encodeURIComponent(id)}`)
+    if (response.status === 404) {
+      return undefined
+    }
+    if (!response.ok) {
+      throw new Error(`load cloud file failed: ${response.status}`)
+    }
+    return response.blob()
+  }
+  return local
+}
 
 /** 清空导入暂存：开始导入前清除上次中断（如关闭页面）遗留的数据，导入失败后清除本次写入。 */
 export const clearStaging = async (): Promise<void> => {

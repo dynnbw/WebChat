@@ -39,6 +39,14 @@
   line-height: 18px;
 }
 
+.cloud {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  margin-left: 4px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
 .action {
   display: none;
   flex-shrink: 0;

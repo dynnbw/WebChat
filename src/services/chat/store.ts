@@ -12,6 +12,12 @@ import {
 } from '../attachments.js'
 import { useSettings } from '../settings.js'
 import { DEFAULT_MODEL } from '../models.js'
+import { ONLINE_MODE } from '../online/mode.js'
+import {
+  cancelCloudSync,
+  scheduleCloudSync,
+  syncSessionNow,
+} from '../cloud/sync.js'
 import { appendBranch, getVisibleMessages, normalizeSession, selectVersion } from './branches.js'
 import * as db from './db.js'
 import {
@@ -106,7 +112,11 @@ const getStreamController = (id: string) => {
 }
 
 const sameSummary = (a: SessionSummary, b: SessionSummary) =>
-  a.title === b.title && a.createdAt === b.createdAt && a.updatedAt === b.updatedAt
+  a.title === b.title &&
+  a.createdAt === b.createdAt &&
+  a.updatedAt === b.updatedAt &&
+  a.cloudSync === b.cloudSync &&
+  a.cloudKind === b.cloudKind
 
 const sessionAccess = new Map<string, number>()
 const unsavedSessions = new Set<string>()
@@ -208,6 +218,10 @@ const persist = (sessionId: string) => {
             ),
           }))
           trimSessionCache()
+        }
+        const latest = getSession(sessionId)
+        if (latest?.cloudSync) {
+          scheduleCloudSync(latest)
         }
       })
       .catch((error: unknown) => {
@@ -459,6 +473,36 @@ export const selectSession = (id: string) => {
   }
 }
 
+/** 开启/关闭某个会话的云端备份；关闭不删除云端副本 */
+export const setSessionCloudSync = async (id: string, cloudSync: boolean): Promise<boolean> => {
+  if (get().importingHistory || deletingSessions.has(id)) {
+    return false
+  }
+  const cached = getSession(id)
+  const session = cached ?? (await db.loadSession(id))
+  if (!session) {
+    return false
+  }
+  const next: Session = { ...session, cloudSync }
+  if (cached) {
+    updateSession(id, (current) => ({ ...current, cloudSync }))
+  } else {
+    set((state) => ({
+      sessionCache: { ...state.sessionCache, [id]: next },
+      sessions: state.sessions.map((summary) =>
+        summary.id === id ? toSessionSummary(next) : summary
+      ),
+    }))
+  }
+  persist(id)
+  if (cloudSync) {
+    void syncSessionNow(next)
+  } else {
+    cancelCloudSync(id)
+  }
+  return true
+}
+
 export const renameSession = (id: string, title: string) => {
   if (get().importingHistory || deletingSessions.has(id)) {
     return
@@ -504,6 +548,7 @@ const removeSessionData = async (id: string): Promise<boolean> => {
       return false
     }
     await db.deleteSession(id)
+    cancelCloudSync(id)
     if (epoch !== historyEpoch) {
       return true
     }
@@ -573,6 +618,7 @@ export const sendMessage = (targetSessionId: string | null) => {
       updatedAt: now,
       messages: [],
       rootMessageId: null,
+      ...(ONLINE_MODE ? { cloudKind: 'online' as const } : {}),
     }
     sessionId = session.id
     touchSession(session.id)

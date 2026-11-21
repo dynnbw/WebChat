@@ -9,6 +9,7 @@ import {
 } from '../base/icons.js'
 import { setSiderCollapsed } from '../../services/settings.js'
 import { groupSessions } from '../../services/chat/sessionGroups.js'
+import { ONLINE_MODE } from '../../services/online/mode.js'
 import { newChat, removeSession, useChatStore } from '../../services/chat/store.js'
 import type { SessionSummary } from '../../services/chat/types.js'
 import { Button } from '../base/Button.js'
@@ -29,7 +30,21 @@ export const Sider = ({ mobile = false }: { mobile?: boolean }) => {
   const sessions = useChatStore((state) => state.sessions)
   const activeId = useChatStore((state) => state.activeId)
   const [now, setNow] = useState(Date.now)
-  const groups = useMemo(() => groupSessions(sessions, now, t), [sessions, now, t])
+  const groups = useMemo(() => {
+    if (!ONLINE_MODE) {
+      return groupSessions(sessions, now, t)
+    }
+    const backups = sessions.filter((session) => session.cloudKind === 'backup')
+    const online = sessions.filter((session) => session.cloudKind !== 'backup')
+    return [
+      ...(backups.length > 0
+        ? [{ key: 'backup', label: t('cloudBackupLabel'), sessions: backups }]
+        : []),
+      ...(online.length > 0
+        ? [{ key: 'online', label: t('onlineConversationsLabel'), sessions: online }]
+        : []),
+    ]
+  }, [sessions, now, t])
   const [deleting, setDeleting] = useState<SessionSummary | null>(null)
   const [deletePending, setDeletePending] = useState(false)
 

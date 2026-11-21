@@ -1,4 +1,5 @@
 import { translate, type TranslationMessage } from '../../i18n/index.js'
+import { ONLINE_MODE } from '../online/mode.js'
 import { resizeUploadImage } from '../../utils/resizeUploadImage.js'
 import { readMessageEvent } from './parseEvent.js'
 import { readServerSentEvents } from './sse.js'
@@ -90,8 +91,12 @@ const anthropicHeaders = (apiKey: string, beta: boolean): Record<string, string>
   ...(beta ? { 'anthropic-beta': FILES_BETA } : {}),
 })
 
-/** 用 GET /models 校验 API Key（不产生费用） */
+/** 用 GET /models 校验 API Key（不产生费用）；在线版改为检查登录态 */
 export const verifyApiKey = async (apiKey: string, signal?: AbortSignal): Promise<void> => {
+  if (ONLINE_MODE) {
+    await request('/api/me', { method: 'GET', signal })
+    return
+  }
   await request(`${API_ORIGIN}/models`, {
     method: 'GET',
     headers: { Authorization: `Bearer ${apiKey}` },
@@ -107,24 +112,31 @@ export const uploadFile = async (
   apiKey: string,
   file: File,
   purpose: FilePurpose | null,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  id?: string
 ): Promise<FileObject> => {
   const form = new FormData()
+  if (ONLINE_MODE && id) {
+    form.append('id', id)
+  }
   if (purpose) {
     form.append('purpose', purpose)
   }
   form.append('file', purpose === null ? await resizeUploadImage(file, signal) : file)
-  const response = await request(`${ANTHROPIC_BASE_URL}/files`, {
+  const response = await request(ONLINE_MODE ? '/api/files' : `${ANTHROPIC_BASE_URL}/files`, {
     method: 'POST',
-    headers: anthropicHeaders(apiKey, true),
+    headers: ONLINE_MODE ? undefined : anthropicHeaders(apiKey, true),
     body: form,
     signal,
   })
   return (await response.json()) as FileObject
 }
 
-/** DELETE /anthropic/v1/files/{file_id} */
+/** DELETE /anthropic/v1/files/{file_id}；在线版不主动删除上游文件 */
 export const deleteFile = async (apiKey: string, fileId: string): Promise<void> => {
+  if (ONLINE_MODE) {
+    return
+  }
   await request(`${ANTHROPIC_BASE_URL}/files/${encodeURIComponent(fileId)}`, {
     method: 'DELETE',
     headers: anthropicHeaders(apiKey, true),
@@ -147,16 +159,24 @@ export async function* streamMessage(
   body: CreateMessageRequest,
   signal: AbortSignal
 ): AsyncGenerator<MessageStreamEvent> {
-  const response = await request(`${ANTHROPIC_BASE_URL}/messages`, {
-    method: 'POST',
-    headers: {
-      ...anthropicHeaders(apiKey, hasFile(body)),
-      'Content-Type': 'application/json',
-      Accept: 'text/event-stream',
-    },
-    body: JSON.stringify({ ...body, stream: true }),
-    signal,
-  })
+  const response = await request(
+    ONLINE_MODE ? '/api/chat' : `${ANTHROPIC_BASE_URL}/messages`,
+    {
+      method: 'POST',
+      headers: ONLINE_MODE
+        ? {
+            'Content-Type': 'application/json',
+            Accept: 'text/event-stream',
+          }
+        : {
+            ...anthropicHeaders(apiKey, hasFile(body)),
+            'Content-Type': 'application/json',
+            Accept: 'text/event-stream',
+          },
+      body: JSON.stringify({ ...body, stream: true }),
+      signal,
+    }
+  )
   const contentType = response.headers.get('Content-Type') ?? ''
   if (!response.body || !contentType.includes('text/event-stream')) {
     throw await readErrorResponse(response, 'protocol', '')

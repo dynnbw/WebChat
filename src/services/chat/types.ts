@@ -118,10 +118,17 @@ export type Session = {
   messages: Message[]
   /** undefined 表示线性消息列表；null 表示空会话。 */
   rootMessageId?: string | null
+  /** 是否把该会话自动备份到云端；云端副本保留与本地删除无关。 */
+  cloudSync?: boolean
+  /** 在线版：来自设备备份的只读会话，或在线版自己的会话。 */
+  cloudKind?: 'backup' | 'online'
 }
 
 /** 会话列表元数据；消息只在打开会话时加载。 */
-export type SessionSummary = Pick<Session, 'id' | 'title' | 'createdAt' | 'updatedAt'>
+export type SessionSummary = Pick<
+  Session,
+  'id' | 'title' | 'createdAt' | 'updatedAt' | 'cloudSync' | 'cloudKind'
+>
 
 /** 显式提取字段，避免将完整会话的消息带进列表。 */
 export const toSessionSummary = (session: SessionSummary): SessionSummary => ({
@@ -129,4 +136,6 @@ export const toSessionSummary = (session: SessionSummary): SessionSummary => ({
   title: session.title,
   createdAt: session.createdAt,
   updatedAt: session.updatedAt,
+  cloudSync: session.cloudSync,
+  cloudKind: session.cloudKind,
 })

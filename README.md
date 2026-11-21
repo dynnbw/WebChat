@@ -35,6 +35,7 @@ The output is written to `dist/`. Deploy it to a static web server or open `dist
 - Markdown, syntax highlighting, KaTeX math, and Mermaid diagrams.
 - Custom system prompt and switchable models; safety-blocked replies show a sensitive-content notice with an expandable original.
 - Usage statistics for API requests, search calls, and token usage over time, split by model.
+- Optional per-chat cloud backup, plus a server-hosted online mode with a server-side API key.
 - Simplified Chinese and English, light and dark themes, mobile layouts, location settings, and chat history import and export.
 
 ## Data and storage
@@ -51,6 +52,7 @@ Settings → Data → Delete all chats clears all local conversations, original 
 | ------------- | ---------------------------- |
 | `pnpm dev`    | Start the development server |
 | `pnpm build`  | Build into `dist/`           |
+| `pnpm build:online` | Build the server-hosted online app into `dist-online/` |
 | `pnpm type`   | Run TypeScript type checks   |
 | `pnpm lint`   | Lint with oxlint             |
 | `pnpm format` | Format with oxfmt            |
@@ -58,6 +60,8 @@ Settings → Data → Delete all chats clears all local conversations, original 
 [rspack.config.ts](rspack.config.ts) uses `https://api.deepseek.com` by default. Use `createConfig({ apiOrigin, devServer })` to customize the API origin and development server proxy.
 
 To access the development server through a custom hostname, add it to a local `.dev-hosts` file (one per line or comma-separated) or set `DEV_ALLOWED_HOSTS`. The file is local-only and is not tracked.
+
+The optional cloud backup and online-mode server lives in [server/](server/README.md).
 
 Chat uses `deepseek-flash` by default through Anthropic-compatible Messages / Files APIs. Speech features use ASR / TTS endpoints. Requests include extensions for search, link reading, titles, and `latest_reminder`, so the configured service must support the corresponding capabilities. Supported attachment formats are determined by server-side validation.
 

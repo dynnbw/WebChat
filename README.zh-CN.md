@@ -35,6 +35,7 @@ pnpm build
 - Markdown、代码高亮、KaTeX 公式和 Mermaid 图表。
 - 自定义系统提示词与模型切换；被安全拒绝的回复显示「此回答敏感」，可展开查看原文。
 - 数据统计：按时间查看 API 请求、搜索调用和 token 用量，并按模型拆分。
+- 可按会话开启云端备份，并提供由服务端持有 API Key 的在线版。
 - 简体中文与英文、浅色与深色主题、移动端布局、位置设置、历史导入导出。
 
 ## 数据
@@ -51,6 +52,7 @@ API Key 和设置保存在浏览器 localStorage，会话及附件原件保存�
 | ------------- | ------------------- |
 | `pnpm dev`    | 启动开发服务器      |
 | `pnpm build`  | 构建到 `dist/`      |
+| `pnpm build:online` | 构建后端托管的在线版到 `dist-online/` |
 | `pnpm type`   | TypeScript 类型检查 |
 | `pnpm lint`   | oxlint 检查         |
 | `pnpm format` | oxfmt 格式化        |
@@ -58,6 +60,8 @@ API Key 和设置保存在浏览器 localStorage，会话及附件原件保存�
 [rspack.config.ts](rspack.config.ts) 默认连接 `https://api.deepseek.com`。`createConfig({ apiOrigin, devServer })` 支持自定义 API 地址和开发服务器代理。
 
 开发服务器需要通过自定义域名访问时，把域名写入本地 `.dev-hosts` 文件（每行一个或用逗号分隔），或设置 `DEV_ALLOWED_HOSTS`。该文件只保留在本地，不会进入仓库。
+
+可选的云端备份和在线版服务在 [server/](server/README.md)。
 
 聊天默认使用 `deepseek-flash`，通过 Anthropic 兼容的 Messages / Files API 通信；语音使用 ASR / TTS 接口。请求使用搜索、链接阅读、标题和 `latest_reminder` 等扩展，接入服务需支持相应能力。附件实际支持的格式以服务端校验为准。
 

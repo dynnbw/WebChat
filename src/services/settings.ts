@@ -15,7 +15,7 @@ export type ThemePreference = 'light' | 'dark' | 'system'
 /** 系统提示词为空或未保存时使用的默认身份说明 */
 export const DEFAULT_SYSTEM_PROMPT = '该助手为DeepSeek，由深度求索公司创造。'
 
-/** 本机设置，存 localStorage：API Key、语言、主题、位置、朗读音色、自动朗读、系统提示词、模型、深度思考与智能搜索开关、侧边栏收起状态 */
+/** 本机设置，存 localStorage：API Key、云端同步地址/Token、语言、主题、位置、朗读音色、自动朗读、系统提示词、模型、深度思考与智能搜索开关、侧边栏收起状态 */
 type Settings = {
   apiKey: string | null
   locale: Locale
@@ -26,6 +26,10 @@ type Settings = {
   autoRead: boolean
   /** 自动朗读时机；关闭自动朗读时保留上次选择 */
   autoReadMode: AutoReadMode
+  /** 本地版同步使用的云端地址；空字符串表示未配置 */
+  cloudOrigin: string
+  /** 云端登录返回的 Bearer Token；不保存密码 */
+  cloudToken: string | null
   /** 每次生成请求作为 system 发送，完全替换默认身份说明 */
   systemPrompt: string
   /** 下一条消息使用的模型；已有回复按自身快照续写 */
@@ -43,6 +47,8 @@ const KEYS = {
   ttsVoice: 'chat-demo:tts-voice',
   autoRead: 'chat-demo:auto-read',
   autoReadMode: 'chat-demo:auto-read-mode',
+  cloudOrigin: 'chat-demo:cloud-origin',
+  cloudToken: 'chat-demo:cloud-token',
   systemPrompt: 'chat-demo:system-prompt',
   model: 'chat-demo:model',
   thinking: 'chat-demo:thinking',
@@ -125,6 +131,8 @@ export const useSettings = create<Settings>(() => ({
   ttsVoice: initialTtsVoice(),
   autoRead: read(KEYS.autoRead) === 'true',
   autoReadMode: read(KEYS.autoReadMode) === 'stream' ? 'stream' : 'done',
+  cloudOrigin: read(KEYS.cloudOrigin) ?? '',
+  cloudToken: read(KEYS.cloudToken),
   systemPrompt: initialSystemPrompt(),
   model: initialModel(),
   thinking: read(KEYS.thinking) === 'true',
@@ -161,6 +169,17 @@ export const setAutoRead = (autoRead: boolean) => {
 export const setAutoReadMode = (autoReadMode: AutoReadMode) => {
   write(KEYS.autoReadMode, autoReadMode)
   useSettings.setState({ autoReadMode })
+}
+
+export const setCloudOrigin = (cloudOrigin: string) => {
+  const value = cloudOrigin.trim().replace(/\/+$/, '')
+  write(KEYS.cloudOrigin, value)
+  useSettings.setState({ cloudOrigin: value })
+}
+
+export const setCloudToken = (cloudToken: string | null) => {
+  write(KEYS.cloudToken, cloudToken)
+  useSettings.setState({ cloudToken })
 }
 
 export const setSystemPrompt = (systemPrompt: string) => {

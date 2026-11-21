@@ -38,6 +38,8 @@ const cssLoader = {
 type ConfigOptions = {
   /** 公开 API 的地址，注入为 __API_ORIGIN__ */
   apiOrigin?: string
+  /** 是否构建后端托管的在线版 */
+  online?: boolean
   /** 开发服务器配置，支持本地接口代理 */
   devServer?: Configuration['devServer']
 }
@@ -45,12 +47,13 @@ type ConfigOptions = {
 /** 创建构建配置，支持自定义 API 地址和开发服务器选项 */
 export const createConfig = ({
   apiOrigin = 'https://api.deepseek.com',
+  online = false,
   devServer,
 }: ConfigOptions = {}): Configuration => ({
   mode: dev ? 'development' : 'production',
   entry: './src/main.tsx',
   output: {
-    path: path.resolve(root, 'dist'),
+    path: path.resolve(root, online ? 'dist-online' : 'dist'),
     // 运行时按当前脚本地址推导资源路径，file:// 下异步 chunk、字体都按相对位置加载
     publicPath: 'auto',
     filename: 'static/js/[name].[contenthash:8].js',
@@ -99,7 +102,10 @@ export const createConfig = ({
       scriptLoading: 'defer',
       meta: { 'application-version': version },
     }),
-    new rspack.DefinePlugin({ __API_ORIGIN__: JSON.stringify(apiOrigin) }),
+    new rspack.DefinePlugin({
+      __API_ORIGIN__: JSON.stringify(apiOrigin),
+      __ONLINE_MODE__: JSON.stringify(online),
+    }),
     new rspack.CopyRspackPlugin({
       patterns: [{ from: path.resolve(root, 'LICENSE'), to: 'LICENSE', toType: 'file' }],
     }),
@@ -108,6 +114,11 @@ export const createConfig = ({
   devServer: {
     port: 8090,
     ...(devAllowedHosts.length > 0 ? { allowedHosts: devAllowedHosts } : {}),
+    ...(online
+      ? {
+          proxy: [{ context: ['/api'], target: 'http://127.0.0.1:8787', changeOrigin: true }],
+        }
+      : {}),
     ...devServer,
   },
 })

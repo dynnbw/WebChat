@@ -37,10 +37,12 @@ export const MessageList = ({
   session,
   streaming,
   footer,
+  readOnly = false,
 }: {
   session: Session
   streaming: boolean
   footer: React.ReactNode
+  readOnly?: boolean
 }) => {
   const isMobile = useIsMobile()
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -156,6 +158,7 @@ export const MessageList = ({
                   isFirst={index === 0}
                   isLast={index === lastIndex || index === lastIndex - 1}
                   busy={streaming}
+                  readOnly={readOnly}
                   versions={versions.get(message.id) ?? EMPTY_VERSIONS}
                   onSelectVersion={selectVersion}
                 />
@@ -167,6 +170,7 @@ export const MessageList = ({
                   isLast={index === lastIndex}
                   streaming={streaming && index === lastIndex}
                   busy={streaming}
+                  readOnly={readOnly}
                   versions={versions.get(message.id) ?? EMPTY_VERSIONS}
                   onSelectVersion={selectVersion}
                 />

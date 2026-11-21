@@ -20,6 +20,7 @@ export const SessionView = ({
   const t = useTranslate()
   const isMobile = useIsMobile()
   const title = session.title || t('untitledChat')
+  const readOnly = session.cloudKind === 'backup'
   return (
     <div className={styles.view}>
       {isMobile ? (
@@ -34,11 +35,16 @@ export const SessionView = ({
       <MessageList
         session={session}
         streaming={streaming}
+        readOnly={readOnly}
         footer={
-          <div className={styles.inputContainer}>
-            <ChatInput sessionId={session.id} />
-            <div className={styles.caveat}>{t('contentCaveat')}</div>
-          </div>
+          readOnly ? (
+            <div className={styles.backupNotice}>{t('cloudBackupReadOnly')}</div>
+          ) : (
+            <div className={styles.inputContainer}>
+              <ChatInput sessionId={session.id} />
+              <div className={styles.caveat}>{t('contentCaveat')}</div>
+            </div>
+          )
         }
       />
     </div>

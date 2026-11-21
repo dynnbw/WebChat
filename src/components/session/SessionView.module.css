@@ -29,6 +29,15 @@
   margin-left: 150px;
 }
 
+.backupNotice {
+  flex-shrink: 0;
+  padding: 16px 24px calc(16px + env(safe-area-inset-bottom));
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 13px;
+  line-height: 20px;
+  text-align: center;
+}
+
 .inputContainer {
   position: sticky;
   bottom: 0;

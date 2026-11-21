@@ -1,6 +1,7 @@
 import clsx from 'clsx'
 import { useRef, useState, type ReactNode } from 'react'
 import {
+  IconCloudOutline16,
   IconDarkOutline16,
   IconDataOutline16,
   IconDownloadOutline16,
@@ -31,6 +32,12 @@ import {
   type ThemePreference,
 } from '../../services/settings.js'
 import { primeReadAloud } from '../../services/speech/readAloud.js'
+import { onlineLogout } from '../../services/online/auth.js'
+import {
+  ONLINE_CAPABLE,
+  ONLINE_MODE,
+  setAppMode,
+} from '../../services/online/mode.js'
 import { useTranslate, type TranslationKey, type TranslationMessage } from '../../i18n/index.js'
 import { Button } from '../base/Button.js'
 import { Modal } from '../base/Modal.js'
@@ -38,6 +45,7 @@ import { Select } from '../base/Select.js'
 import { showToast } from '../base/toastState.js'
 import { ApiKeyConfirm, ApiKeyField, useApiKeyEditor } from './ApiKeyField.js'
 import { closeSettings, useSettingsDialog, type SettingsSection } from './settingsDialogState.js'
+import { CloudSettings } from './CloudSettings.js'
 import { SystemPromptSetting } from './SystemPromptSetting.js'
 import styles from './Settings.module.css'
 
@@ -50,20 +58,26 @@ export const SettingsDialog = () => {
   return open ? <SettingsContent /> : null
 }
 
-const sections: { value: SettingsSection; label: TranslationKey; icon: ReactNode }[] = [
+const allSections: { value: SettingsSection; label: TranslationKey; icon: ReactNode }[] = [
   {
     value: 'general',
     label: 'settingDialogAsideGeneralOptionLabel',
     icon: <IconSettingsOutline16 />,
   },
+  { value: 'cloud', label: 'settingDialogAsideCloudOptionLabel', icon: <IconCloudOutline16 /> },
   { value: 'data', label: 'settingDialogAsideDataOptionLabel', icon: <IconDataOutline16 /> },
 ]
+
+const sections = ONLINE_MODE ? allSections.filter((item) => item.value === 'general') : allSections
 
 const SettingsContent = () => {
   const t = useTranslate()
   const isMobile = useIsMobile()
-  // 打开时按调用方指定的分组选中，之后在弹窗内切换
-  const [section, setSection] = useState(() => useSettingsDialog.getState().section)
+  // 打开时按调用方指定的分组选中；在线版只保留通用设置
+  const [section, setSection] = useState<SettingsSection>(() => {
+    const requested = useSettingsDialog.getState().section
+    return sections.some((item) => item.value === requested) ? requested : 'general'
+  })
   // 切换分组不丢失正在输入的 API Key 与导入状态
   const apiKeyEditor = useApiKeyEditor()
   const historyImport = useHistoryImport()
@@ -107,7 +121,16 @@ const SettingsContent = () => {
               <TtsVoiceSetting />
               <AutoReadSetting />
               <LocationSetting />
+              {ONLINE_CAPABLE ? (
+                ONLINE_MODE ? (
+                  <OnlineAccountSetting />
+                ) : (
+                  <OfflineModeSetting />
+                )
+              ) : null}
             </>
+          ) : section === 'cloud' ? (
+            <CloudSettings />
           ) : (
             <>
               <ApiKeyField editor={apiKeyEditor} />
@@ -316,6 +339,49 @@ const TtsVoiceSetting = () => {
           ]}
           onChange={setTtsVoice}
         />
+      }
+    />
+  )
+}
+
+const OnlineAccountSetting = () => {
+  const t = useTranslate()
+  return (
+    <SettingCell
+      label={t('onlineAccount')}
+      description={t('cloudSettingsLoggedIn')}
+      status={null}
+      action={
+        <div className={styles.modeActions}>
+          <Button variant="outlined" size="m" onClick={() => setAppMode('local')}>
+            {t('onlineSwitchToOffline')}
+          </Button>
+          <Button
+            variant="outlined"
+            size="m"
+            onClick={() => {
+              void onlineLogout().finally(() => window.location.reload())
+            }}
+          >
+            {t('onlineLogout')}
+          </Button>
+        </div>
+      }
+    />
+  )
+}
+
+const OfflineModeSetting = () => {
+  const t = useTranslate()
+  return (
+    <SettingCell
+      label={t('onlineAccount')}
+      description={t('onlineOfflineMode')}
+      status={null}
+      action={
+        <Button variant="outlined" size="m" onClick={() => setAppMode('online')}>
+          {t('onlineSwitchToOnline')}
+        </Button>
       }
     />
   )
