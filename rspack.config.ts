@@ -9,6 +9,23 @@ import { rspack, type Configuration } from '@rspack/core'
 const dev = !process.argv.includes('build')
 const targets = ['chrome >= 105', 'edge >= 105', 'safari >= 16', 'firefox >= 110']
 const root = path.dirname(fileURLToPath(import.meta.url))
+const devAllowedHosts = (() => {
+  const fromEnv = process.env.DEV_ALLOWED_HOSTS?.split(',')
+    .map((host) => host.trim())
+    .filter(Boolean)
+  if (fromEnv && fromEnv.length > 0) {
+    return fromEnv
+  }
+  try {
+    return readFileSync(path.resolve(root, '.dev-hosts'), 'utf8')
+      .split(/\r?\n|,/)
+      .map((host) => host.trim())
+      .filter(Boolean)
+  } catch {
+    return []
+  }
+})()
+
 const { version } = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url), 'utf8')
 ) as { version: string }
@@ -88,7 +105,11 @@ export const createConfig = ({
     }),
   ],
   performance: { hints: false },
-  devServer: { port: 8090, ...devServer },
+  devServer: {
+    port: 8090,
+    ...(devAllowedHosts.length > 0 ? { allowedHosts: devAllowedHosts } : {}),
+    ...devServer,
+  },
 })
 
 // eslint-disable-next-line import/no-default-export
